@@ -36,7 +36,7 @@ namespace Microsoft.Maui
 
 			//AddToolbar(parent);
 
-			parent.AddView(content.ToNative(window.MauiContext), new CoordinatorLayout.LayoutParams(CoordinatorLayout.LayoutParams.MatchParent, CoordinatorLayout.LayoutParams.MatchParent));
+			parent.AddView(content.ToContainerView(window.MauiContext), new CoordinatorLayout.LayoutParams(CoordinatorLayout.LayoutParams.MatchParent, CoordinatorLayout.LayoutParams.MatchParent));
 		}
 
 		void AddToolbar(ViewGroup parent)
