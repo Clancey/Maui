@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.Maui.Controls.Internals;
 using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Hosting;
+using Microsoft.Maui.HotReload;
 
 namespace Microsoft.Maui.Controls
 {
 	// TODO: We don't currently have any concept of a page in Maui
 	// so this just treats it as a layout for now
-	public partial class ContentPage : Microsoft.Maui.ILayout
+	public partial class ContentPage : Microsoft.Maui.ILayout, HotReload.IHotReloadableView
 	{
-		IReadOnlyList<Microsoft.Maui.IView> Microsoft.Maui.ILayout.Children =>
+		IReadOnlyList<Microsoft.Maui.IView> Microsoft.Maui.IContainer.Children =>
 			new List<IView>() { Content };
 
 		ILayoutHandler Maui.ILayout.LayoutHandler => Handler as ILayoutHandler;
@@ -81,5 +83,29 @@ namespace Microsoft.Maui.Controls
 		}
 
 
+		#region HotReload
+
+		IView IReplaceableView.ReplacedView => HotReload.MauiHotReloadHelper.GetReplacedView(this) ?? this;
+
+		HotReload.IReloadHandler HotReload.IHotReloadableView.ReloadHandler { get; set; }
+
+		void HotReload.IHotReloadableView.TransferState(IView newView)
+		{
+			//TODO: LEt you hot reload the the ViewModel
+			if (newView is View v)
+				v.BindingContext = BindingContext;
+		}
+
+		void HotReload.IHotReloadableView.Reload()
+		{
+			Device.BeginInvokeOnMainThread(() =>
+			{
+				this.CheckHandlers();
+				var reloadHandler = ((IHotReloadableView)this).ReloadHandler;
+				reloadHandler?.Reload();
+				//TODO: if reload handler is null, Do a manual reload?
+			});
+		}
+		#endregion
 	}
 }
