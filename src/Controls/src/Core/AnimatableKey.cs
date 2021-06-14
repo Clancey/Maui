@@ -1,9 +1,10 @@
 using System;
-
+using Microsoft.Maui.Animations;
 namespace Microsoft.Maui.Controls
 {
 	internal class AnimatableKey
 	{
+		public AnimationManager AnimationManager { get; set; }
 		public AnimatableKey(IAnimatable animatable, string handle)
 		{
 			if (animatable == null)

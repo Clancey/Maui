@@ -8,7 +8,7 @@ namespace Microsoft.Maui.Controls.Internals
 	[EditorBrowsable(EditorBrowsableState.Never)]
 	public abstract class Ticker
 	{
-		static Ticker s_ticker;
+		//static Ticker s_ticker;
 		readonly Stopwatch _stopwatch;
 		readonly List<Tuple<int, Func<long, bool>>> _timeouts;
 
@@ -38,34 +38,34 @@ namespace Microsoft.Maui.Controls.Internals
 			}
 		}
 
-		public static void SetDefault(Ticker ticker) => Default = ticker;
-		public static Ticker Default
-		{
-			internal set
-			{
-				if (value == null && s_ticker != null)
-				{
-					(s_ticker as IDisposable)?.Dispose();
-				}
-				s_ticker = value;
-			}
-			get
-			{
-				if (s_ticker == null)
-				{
-					s_ticker = Device.PlatformServices.CreateTicker();
-				}
+		//public static void SetDefault(Ticker ticker) => Default = ticker;
+		//public static Ticker Default
+		//{
+		//	internal set
+		//	{
+		//		if (value == null && s_ticker != null)
+		//		{
+		//			(s_ticker as IDisposable)?.Dispose();
+		//		}
+		//		s_ticker = value;
+		//	}
+		//	get
+		//	{
+		//		if (s_ticker == null)
+		//		{
+		//			s_ticker = Device.PlatformServices.CreateTicker();
+		//		}
 
-				return s_ticker.GetTickerInstance();
-			}
-		}
+		//		return s_ticker.GetTickerInstance();
+		//	}
+		//}
 
-		protected virtual Ticker GetTickerInstance()
-		{
-			// This method is provided so platforms can override it and return something other than
-			// the normal Ticker singleton
-			return s_ticker;
-		}
+		//protected virtual Ticker GetTickerInstance()
+		//{
+		//	// This method is provided so platforms can override it and return something other than
+		//	// the normal Ticker singleton
+		//	return s_ticker;
+		//}
 
 		public virtual int Insert(Func<long, bool> timeout)
 		{

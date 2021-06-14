@@ -1,44 +1,33 @@
-//
-// Tweener.cs
-//
-// Author:
-//       Jason Smith <jason.smith@xamarin.com>
-//
-// Copyright (c) 2012 Microsoft.Maui.Controls Inc.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 using System;
 using System.Collections.Generic;
+using Microsoft.Maui.Animations;
 using Microsoft.Maui.Controls.Internals;
 
 namespace Microsoft.Maui.Controls
 {
 	public static class AnimationExtensions
 	{
-		static readonly Dictionary<AnimatableKey, Info> s_animations;
+		static readonly Dictionary<AnimatableKey, Animation> s_animations;
 		static readonly Dictionary<AnimatableKey, int> s_kinetics;
 
 		static AnimationExtensions()
 		{
-			s_animations = new Dictionary<AnimatableKey, Info>();
+			s_animations = new Dictionary<AnimatableKey, Animation>();
 			s_kinetics = new Dictionary<AnimatableKey, int>();
+		}
+
+		public static void Commit(this Animation animation, IFrameworkElement owner, string name, uint rate = 16, uint length = 250, Easing easing = null, Action<double, bool> finished = null, Func<bool> repeat = null)
+		{
+			//TODO: Get Animation
+
+		}
+		public static void Commit(this Animation animation, IAnimatable owner, AnimationManger manager, string name, uint rate = 16, uint length = 250, Easing easing = null, Action<double, bool> finished = null, Func<bool> repeat = null)
+		{
+			animation.Name = name;
+			animation.Easing = easing ?? Easing.Default;
+			animation.Duration = 1000d / length;
+			animation.Finished = ()=> finished?.Invoke(animation.Progress, animation.HasFinished);
+			DoAction(owner, () => manager.Add(animation));			
 		}
 
 		public static bool AbortAnimation(this IAnimatable self, string handle)
@@ -60,52 +49,19 @@ namespace Microsoft.Maui.Controls
 
 			return true;
 		}
-
-		public static void Animate(this IAnimatable self, string name, Animation animation, uint rate = 16, uint length = 250, Easing easing = null, Action<double, bool> finished = null,
-								   Func<bool> repeat = null)
+		
+		public static void Animate(this IAnimatable self, string name, Animation animation, AnimationManger manager, uint length = 250, Easing easing = null)
 		{
-			if (repeat == null)
-				self.Animate(name, animation.GetCallback(), rate, length, easing, finished, null);
-			else
-			{
-				Func<bool> r = () =>
-				{
-					var val = repeat();
-					if (val)
-						animation.ResetChildren();
-					return val;
-				};
-				self.Animate(name, animation.GetCallback(), rate, length, easing, finished, r);
-			}
+			animation.Easing = easing ?? Easing.Default;
+			animation.Name = name;
+			animation.Duration = 1000d / length;
+			DoAction(self, ()=> manager.Add(animation));
 		}
-
-		public static void Animate(this IAnimatable self, string name, Action<double> callback, double start, double end, uint rate = 16, uint length = 250, Easing easing = null,
-								   Action<double, bool> finished = null, Func<bool> repeat = null)
+		public static void Animate(this IFrameworkElement frameworkElement, Animation animation)
 		{
-			self.Animate(name, Interpolate(start, end), callback, rate, length, easing, finished, repeat);
+			//TODO: Get Animation Manager from framework element;
+			
 		}
-
-		public static void Animate(this IAnimatable self, string name, Action<double> callback, uint rate = 16, uint length = 250, Easing easing = null, Action<double, bool> finished = null,
-								   Func<bool> repeat = null)
-		{
-			self.Animate(name, x => x, callback, rate, length, easing, finished, repeat);
-		}
-
-		public static void Animate<T>(this IAnimatable self, string name, Func<double, T> transform, Action<T> callback,
-			uint rate = 16, uint length = 250, Easing easing = null,
-			Action<T, bool> finished = null, Func<bool> repeat = null)
-		{
-			if (transform == null)
-				throw new ArgumentNullException(nameof(transform));
-			if (callback == null)
-				throw new ArgumentNullException(nameof(callback));
-			if (self == null)
-				throw new ArgumentNullException(nameof(self));
-
-			Action animate = () => AnimateInternal(self, name, transform, callback, rate, length, easing, finished, repeat);
-			DoAction(self, animate);
-		}
-
 
 		public static void AnimateKinetic(this IAnimatable self, string name, Func<double, double, bool> callback, double velocity, double drag, Action finished = null)
 		{
@@ -141,14 +97,12 @@ namespace Microsoft.Maui.Controls
 
 			while (s_animations.ContainsKey(key))
 			{
-				Info info = s_animations[key];
-
+				
+				var animation = s_animations[key];
 				s_animations.Remove(key);
-
-				info.Tweener.ValueUpdated -= HandleTweenerUpdated;
-				info.Tweener.Finished -= HandleTweenerFinished;
-				info.Tweener.Stop();
-				info.Finished?.Invoke(1.0f, true);
+				animation.Pause();
+				animation.RemoveFromParent();
+				animation.Finished?.Invoke();
 			}
 		}
 
@@ -159,11 +113,18 @@ namespace Microsoft.Maui.Controls
 				return;
 			}
 
+			
 			Ticker.Default.Remove(s_kinetics[key]);
 			s_kinetics.Remove(key);
 		}
 
-		static void AnimateInternal<T>(IAnimatable self, string name, Func<double, T> transform, Action<T> callback,
+		static void AnimateInternal(IAnimatable self, Animation animation, AnimationManger manager)
+		{
+			animation.Finished += () =>
+			{
+			};
+		}
+		static void AnimateInternal1<T>(IAnimatable self, string name, Func<double, T> transform, Action<T> callback,
 			uint rate, uint length, Easing easing, Action<T, bool> finished, Func<bool> repeat)
 		{
 			var key = new AnimatableKey(self, name);
@@ -227,10 +188,9 @@ namespace Microsoft.Maui.Controls
 			s_kinetics[key] = tick;
 		}
 
-		static void HandleTweenerFinished(object o, EventArgs args)
+		static void HandleAnimationFinished(Animation animation)
 		{
-			var tweener = o as Tweener;
-			Info info;
+			s_animations.TryAdd
 			if (tweener != null && s_animations.TryGetValue(tweener.Handle, out info))
 			{
 				IAnimatable owner;
@@ -305,22 +265,7 @@ namespace Microsoft.Maui.Controls
 			}
 		}
 
-		class Info
-		{
-			public Action<double> Callback;
-			public Action<double, bool> Finished;
-			public Func<bool> Repeat;
-			public Tweener Tweener;
-
-			public Easing Easing { get; set; }
-
-			public uint Length { get; set; }
-
-			public WeakReference<IAnimatable> Owner { get; set; }
-
-			public uint Rate { get; set; }
-		}
-
+		
 		sealed class BatchObject : IDisposable
 		{
 			IAnimatable _animatable;
