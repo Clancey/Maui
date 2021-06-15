@@ -4,25 +4,41 @@ using System.Linq;
 
 namespace Microsoft.Maui.Animations
 {
-	public class AnimationManger
+	public class AnimationManger : IAnimationManager
 	{
 		public double SpeedModifier { get; set; } = 1;
 
-		public AnimationManger(ITicker ticker)
+		public AnimationManger()
 		{
-			var isRunning = Ticker?.IsRunning ?? false;
-			Ticker = ticker;
+			
+		}
+		long lastUpdate;
+
+
+		ITicker? _ticker;
+		public ITicker Ticker {
+			get => _ticker ?? (Ticker = new Ticker()); 
+			set => setTicker(value);
+		}
+		void setTicker(ITicker ticker)
+		{
+			_ = ticker ?? throw new ArgumentNullException(nameof(ticker));
+
+			var oldTicker = Ticker;
+			if (oldTicker == ticker)
+				return;
+
+			var isRunning = oldTicker?.IsRunning ?? false;
+			oldTicker?.Stop();
+			_ticker = ticker;
 			ticker.Fire = OnFire;
 			if (isRunning)
 				ticker.Start();
 			lastUpdate = GetCurrentTick();
 		}
-		long lastUpdate;
-	
 
-		ITicker Ticker;
+		List<Animation> Animations = new List<Animation>();
 
-		static List<Animation> Animations = new List<Animation>();
 		public void Add(Animation animation)
 		{
 			//If animations are disabled, don't do anything

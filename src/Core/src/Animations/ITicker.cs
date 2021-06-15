@@ -6,7 +6,7 @@ namespace Microsoft.Maui.Animations
 		bool IsRunning { get; }
 		bool SystemEnabled { get; }
 		int MaxFps { get; set; }
-		Action Fire { get; set; }
+		Action? Fire { get; set; }
 		void Start();
 		void Stop();
 
