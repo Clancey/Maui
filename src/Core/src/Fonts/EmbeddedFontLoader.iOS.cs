@@ -21,7 +21,7 @@ namespace Microsoft.Maui
 					if (!System.IO.File.Exists(font.FontName))
 						throw new InvalidOperationException("ResourceStream was null.");
 
-					var provider = new CGDataProvider(font.FontName);
+					var provider = new CGDataProvider(font.FontName!);
 					cgFont = CGFont.CreateFromProvider(provider);
 				}
 				else

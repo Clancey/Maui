@@ -10,9 +10,9 @@ namespace Microsoft.Maui
 			var resolvedFilename = ResolveFileSystemFont(filename);
 
 			if (!string.IsNullOrEmpty(resolvedFilename))
-				return LoadFileSystemFont(font, resolvedFilename, alias);
+				return LoadFileSystemFont(font, resolvedFilename!, alias);
 
-			return LoadEmbeddedFont(font, filename, alias, GetNativeFontStream(filename, alias));
+			return LoadEmbeddedFont(font, filename!, alias, GetNativeFontStream(filename, alias));
 		}
 
 		string? ResolveFileSystemFont(string filename)
