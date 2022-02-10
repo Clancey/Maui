@@ -21,6 +21,7 @@ namespace Microsoft.Maui.Hosting.Internal
 					registrationAction.AddRegistration(collection);
 				}
 			}
+			HotReload.MauiHotReloadHelper.RegisterHandlers(collection);
 			return collection;
 		}
 

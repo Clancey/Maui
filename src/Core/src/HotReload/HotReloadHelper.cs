@@ -8,17 +8,19 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Maui.Hosting;
 using Microsoft.Maui.Internal;
 
+#if NET6_0_OR_GREATER
+[assembly: System.Reflection.Metadata.MetadataUpdateHandlerAttribute(typeof(Microsoft.Maui.HotReload.MauiHotReloadHelper))]
+#endif
 namespace Microsoft.Maui.HotReload
 {
 	public static class MauiHotReloadHelper
 	{
+
 		static IMauiHandlersCollection? HandlerService;
 		//static IMauiHandlersServiceProvider? HandlerServiceProvider;
-		public static void Init(IMauiHandlersCollection handlerService)
+		public static void RegisterHandlers(IMauiHandlersCollection handlerService)
 		{
 			HandlerService = handlerService;
-			//HandlerServiceProvider = new MauiHandlersServiceProvider(handlerService);
-			IsEnabled = true;
 		}
 		public static void AddActiveView(IHotReloadableView view) => ActiveViews.Add(view);
 		public static void Reset()
@@ -49,7 +51,7 @@ namespace Microsoft.Maui.HotReload
 
 			if (!replacedViews.TryGetValue(view.GetType().FullName!, out var newViewType))
 				return false;
-			return newView.GetType() == newViewType;
+			return true;
 		}
 		public static IView GetReplacedView(IHotReloadableView view)
 		{
@@ -57,7 +59,7 @@ namespace Microsoft.Maui.HotReload
 				return view;
 
 			var viewType = view.GetType();
-			if (!replacedViews.TryGetValue(viewType.FullName!, out var newViewType) || viewType == newViewType)
+			if (!replacedViews.TryGetValue(viewType.FullName!, out var newViewType))
 				return view;
 
 			currentViews.TryGetValue(view, out var parameters);
@@ -175,5 +177,15 @@ namespace Microsoft.Maui.HotReload
 				view!.Reload();
 			}
 		}
+
+#region Metadata Update Handler
+		public static void UpdateApplication(Type[] types)
+		{
+			IsEnabled = true;
+			foreach (var t in types)
+				RegisterReplacedView(t.FullName ?? "", t);
+		}
+		public static void ClearCache(Type[] types) => TriggerReload();
+#endregion
 	}
 }
